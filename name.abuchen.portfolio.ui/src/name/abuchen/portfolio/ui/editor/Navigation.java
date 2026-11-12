@@ -657,8 +657,8 @@ public final class Navigation
         Item section = new Item("Piano di investimento"); //$NON-NLS-1$
         roots.add(section);
 
-        section.add(new Item("Parametri", ParametriPianoView.class)); //$NON-NLS-1$
-        section.add(new Item("Piano anno per anno", PianoAnnualeView.class)); //$NON-NLS-1$
+        section.add(new Item("Parametri", ParametriPianoView.class, true)); //$NON-NLS-1$
+        section.add(new Item("Piano anno per anno", PianoAnnualeView.class, true)); //$NON-NLS-1$
     }
 
     private void createMiscSection()

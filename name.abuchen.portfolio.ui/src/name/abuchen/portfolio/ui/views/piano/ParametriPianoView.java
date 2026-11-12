@@ -26,6 +26,7 @@ import name.abuchen.portfolio.piano.PianoCalcolo;
 import name.abuchen.portfolio.piano.PianoInvestimento;
 import name.abuchen.portfolio.piano.PianoStore;
 import name.abuchen.portfolio.snapshot.ClientSnapshot;
+import name.abuchen.portfolio.ui.UIConstants;
 import name.abuchen.portfolio.ui.editor.AbstractFinanceView;
 import name.abuchen.portfolio.ui.util.Colors;
 
@@ -96,8 +97,12 @@ public class ParametriPianoView extends AbstractFinanceView
                         t -> piano.setQuotaCommodities(percentuale(t)), "");
         campo(body, "Cash (quota fissa, %)", () -> PianoFormat.percentualeModifica(piano.getQuotaCash()),
                         t -> piano.setQuotaCash(percentuale(t)), "");
-        risultato(body, "Avviso", () -> piano.getQuotaBond() < 0 ? "controlla le quote fisse: il Bond è negativo" : "",
-                        false).label().setForeground(Colors.theme().redForeground());
+        var avviso = new Label(body, SWT.NONE);
+        avviso.setForeground(Colors.theme().redForeground());
+        avviso.setBackground(body.getBackground());
+        GridDataFactory.fillDefaults().span(3, 1).applyTo(avviso);
+        risultati.add(new Risultato(avviso,
+                        () -> piano.getQuotaBond() < 0 ? "Controlla le quote fisse: la quota Bond è negativa." : ""));
 
         sezione(body, "3. Dati di partenza e parametri del piano");
         campo(body, "Anno di partenza (anno 0)", () -> PianoFormat.intero(piano.getAnnoPartenza()),
@@ -196,7 +201,7 @@ public class ParametriPianoView extends AbstractFinanceView
     {
         var label = new Label(parent, SWT.NONE);
         label.setText(testo);
-        label.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
+        label.setData(UIConstants.CSS.CLASS_NAME, UIConstants.CSS.HEADING2);
         label.setBackground(parent.getBackground());
         GridDataFactory.fillDefaults().span(3, 1).indent(0, 12).applyTo(label);
     }

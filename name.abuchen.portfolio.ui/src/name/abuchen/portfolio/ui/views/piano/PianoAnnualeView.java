@@ -2,6 +2,7 @@ package name.abuchen.portfolio.ui.views.piano;
 
 import java.text.ParseException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 
 import jakarta.inject.Inject;
@@ -123,7 +124,8 @@ public class PianoAnnualeView extends AbstractFinanceView
                 data = LocalDate.now();
             var dataFinale = data;
 
-            manager.add(new Action("Prendi il valore da Portfolio Performance (" + dataFinale + ")")
+            manager.add(new Action("Prendi il valore da Portfolio Performance (al "
+                            + dataFinale.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ")")
             {
                 @Override
                 public void run()

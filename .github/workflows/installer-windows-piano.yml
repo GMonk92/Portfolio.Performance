@@ -53,6 +53,7 @@ jobs:
             -DskipTests \
             -Dcheckstyle.skip=true \
             -Djacoco.skip=true \
+            -Ppackage-distro \
             --file portfolio-app/pom.xml
 
       - name: Build installer
