@@ -58,6 +58,7 @@ import name.abuchen.portfolio.ui.views.currency.CurrencyView;
 import name.abuchen.portfolio.ui.views.dashboard.DashboardView;
 import name.abuchen.portfolio.ui.views.holdings.HoldingsPieChartView;
 import name.abuchen.portfolio.ui.views.payments.PaymentsView;
+import name.abuchen.portfolio.ui.views.piano.ClassificatoreMorningstarView;
 import name.abuchen.portfolio.ui.views.piano.ParametriPianoView;
 import name.abuchen.portfolio.ui.views.piano.PianoAnnualeView;
 import name.abuchen.portfolio.ui.views.piano.RevisionePacView;
@@ -661,6 +662,7 @@ public final class Navigation
         section.add(new Item("Parametri", ParametriPianoView.class, true)); //$NON-NLS-1$
         section.add(new Item("Prospetto", PianoAnnualeView.class, true)); //$NON-NLS-1$
         section.add(new Item("Revisione PAC", RevisionePacView.class, true)); //$NON-NLS-1$
+        section.add(new Item("Classificatore", ClassificatoreMorningstarView.class, true)); //$NON-NLS-1$
     }
 
     private void createMiscSection()
