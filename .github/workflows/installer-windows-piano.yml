@@ -66,6 +66,6 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: PortfolioPerformance-Piano-setup
-          path: portfolio-product/target/products/PortfolioPerformance-Piano-*-setup.exe
+          name: PersonalPortfolioPerformance-setup
+          path: portfolio-product/target/products/PersonalPortfolioPerformance-*-setup.exe
           if-no-files-found: error

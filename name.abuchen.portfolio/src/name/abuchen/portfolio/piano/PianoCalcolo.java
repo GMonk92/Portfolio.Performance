@@ -2,7 +2,9 @@ package name.abuchen.portfolio.piano;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Calcoli del piano di investimento. Riproduce le formule dei fogli "Calcoli",
@@ -92,12 +94,15 @@ public final class PianoCalcolo
     }
 
     private final List<Riga> righe;
+    private final Map<Integer, Double> pacTuttiGliAnni;
     private final Integer annoRaggiungimento;
     private final Double pacNecessario;
 
-    private PianoCalcolo(List<Riga> righe, Integer annoRaggiungimento, Double pacNecessario)
+    private PianoCalcolo(List<Riga> righe, Map<Integer, Double> pacTuttiGliAnni, Integer annoRaggiungimento,
+                    Double pacNecessario)
     {
         this.righe = Collections.unmodifiableList(righe);
+        this.pacTuttiGliAnni = Collections.unmodifiableMap(pacTuttiGliAnni);
         this.annoRaggiungimento = annoRaggiungimento;
         this.pacNecessario = pacNecessario;
     }
@@ -105,6 +110,15 @@ public final class PianoCalcolo
     public List<Riga> getRighe()
     {
         return righe;
+    }
+
+    /**
+     * PAC mensile stimato di ogni anno del piano, anche degli anni il cui PAC
+     * non è ancora visibile nel Prospetto.
+     */
+    public Map<Integer, Double> getPacTuttiGliAnni()
+    {
+        return pacTuttiGliAnni;
     }
 
     /**
@@ -145,6 +159,7 @@ public final class PianoCalcolo
         double[] stimaReale = new double[ny + 1];
 
         List<Riga> righe = new ArrayList<>();
+        Map<Integer, Double> pacPerAnno = new LinkedHashMap<>();
 
         for (int n = 0; n <= ny; n++)
         {
@@ -171,6 +186,8 @@ public final class PianoCalcolo
                 else
                     stimaReale[n] = stimaReale[n - 1] * (1 + r) + pac[n] * 12 / fattore[n];
             }
+
+            pacPerAnno.put(anno, pac[n]);
 
             Double pacVisibile;
             Double target;
@@ -211,7 +228,7 @@ public final class PianoCalcolo
                 sotto++;
         Integer annoRaggiungimento = sotto > ny ? null : start + sotto;
 
-        return new PianoCalcolo(righe, annoRaggiungimento, pacNecessario(piano));
+        return new PianoCalcolo(righe, pacPerAnno, annoRaggiungimento, pacNecessario(piano));
     }
 
     private static Double pacNecessario(PianoInvestimento piano)

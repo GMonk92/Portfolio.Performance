@@ -3,7 +3,7 @@
 # alla versione ufficiale di Portfolio Performance, senza sostituirla.
 
 # required (if not uncomment below) input parameters:
-!define APPNAME "Portfolio Performance Piano"
+!define APPNAME "Personal Portfolio Performance"
 !define EXECUTABLENAME "PortfolioPerformance"
 !define APPEXE "PortfolioPerformance.exe"
 !define APPINI "PortfolioPerformance.ini"
@@ -15,7 +15,7 @@
 
 !include nsDialogs.nsh
 
-OutFile "..\target\products\${EXECUTABLENAME}-Piano-${SOFTWARE_VERSION}-setup.exe"
+OutFile "..\target\products\PersonalPortfolioPerformance-${SOFTWARE_VERSION}-setup.exe"
 Name "${APPNAME}"
 
 BrandingText " "

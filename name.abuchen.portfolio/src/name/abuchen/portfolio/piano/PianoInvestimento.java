@@ -63,6 +63,91 @@ public class PianoInvestimento
         }
     }
 
+    /** Una asset class con il suo peso target nel portafoglio. */
+    public static class AssetClass
+    {
+        private String nome;
+        private double peso;
+
+        public AssetClass()
+        {
+        }
+
+        public AssetClass(String nome, double peso)
+        {
+            this.nome = nome;
+            this.peso = peso;
+        }
+
+        public String getNome()
+        {
+            return nome;
+        }
+
+        public void setNome(String nome)
+        {
+            this.nome = nome;
+        }
+
+        public double getPeso()
+        {
+            return peso;
+        }
+
+        public void setPeso(double peso)
+        {
+            this.peso = peso;
+        }
+    }
+
+    /**
+     * Assegnazione di un titolo di Portfolio Performance a una asset class,
+     * con il suo peso dentro l'asset class (foglio Portafoglio dell'Excel).
+     */
+    public static class Strumento
+    {
+        private String uuid;
+        private String assetClass;
+        private double pesoNellaClasse;
+
+        public Strumento()
+        {
+        }
+
+        public Strumento(String uuid)
+        {
+            this.uuid = uuid;
+        }
+
+        public String getUuid()
+        {
+            return uuid;
+        }
+
+        public String getAssetClass()
+        {
+            return assetClass;
+        }
+
+        public void setAssetClass(String assetClass)
+        {
+            this.assetClass = assetClass;
+        }
+
+        public double getPesoNellaClasse()
+        {
+            return pesoNellaClasse;
+        }
+
+        public void setPesoNellaClasse(double pesoNellaClasse)
+        {
+            this.pesoNellaClasse = pesoNellaClasse;
+        }
+    }
+
+    /** Numero massimo di asset class. */
+    public static final int NUMERO_ASSET_CLASS = 6;
+
     /** Numero di anni del piano dopo l'anno di partenza. */
     public static final int NUMERO_ANNI = 45;
 
@@ -70,9 +155,13 @@ public class PianoInvestimento
     private int eta = 33;
     private double tassoBce = 3.75;
 
-    // 2. asset allocation (quote fisse)
-    private double quotaCommodities = 0.05;
-    private double quotaCash = 0.0;
+    // 2. asset allocation: fino a sei asset class con peso libero (la somma
+    // deve fare 100%). I due campi seguenti servono solo a leggere i file
+    // salvati con la prima versione, in cui Equity e Bond venivano dalla
+    // formula e le altre quote erano fisse.
+    private Double quotaCommodities;
+    private Double quotaCash;
+    private List<AssetClass> assetClass;
 
     // 3. dati di partenza e parametri del piano
     private int annoPartenza = 2026;
@@ -89,7 +178,11 @@ public class PianoInvestimento
     // 4. dove ti porta il piano
     private int annoObiettivo = 2050;
 
+    private int annoRevisione;
+
     private List<AnnoPiano> anni = new ArrayList<>();
+
+    private List<Strumento> strumenti = new ArrayList<>();
 
     public int getEta()
     {
@@ -111,24 +204,75 @@ public class PianoInvestimento
         this.tassoBce = tassoBce;
     }
 
-    public double getQuotaCommodities()
+    /**
+     * Asset class del piano. Se il file è stato salvato con la prima versione
+     * vengono create dai valori di allora (Equity dalla formula, Bond il
+     * resto, Commodities e Cash fisse).
+     */
+    public List<AssetClass> getAssetClass()
     {
-        return quotaCommodities;
+        if (assetClass == null)
+        {
+            assetClass = new ArrayList<>();
+            double commodities = quotaCommodities != null ? quotaCommodities : 0.05;
+            double cash = quotaCash != null ? quotaCash : 0;
+            double equity = getQuotaAzionaria();
+            assetClass.add(new AssetClass("Equity", equity)); //$NON-NLS-1$
+            assetClass.add(new AssetClass("Bond", 1 - equity - commodities - cash)); //$NON-NLS-1$
+            assetClass.add(new AssetClass("Commodities", commodities)); //$NON-NLS-1$
+            assetClass.add(new AssetClass("Cash", cash)); //$NON-NLS-1$
+            quotaCommodities = null;
+            quotaCash = null;
+        }
+        while (assetClass.size() < NUMERO_ASSET_CLASS)
+            assetClass.add(new AssetClass("", 0)); //$NON-NLS-1$
+        return assetClass;
     }
 
-    public void setQuotaCommodities(double quotaCommodities)
+    /** Somma dei pesi delle asset class. */
+    public double getTotaleAssetClass()
     {
-        this.quotaCommodities = quotaCommodities;
+        return getAssetClass().stream().mapToDouble(AssetClass::getPeso).sum();
     }
 
-    public double getQuotaCash()
+    /** Peso target dell'asset class con il nome dato, 0 se non esiste. */
+    public double getPesoAssetClass(String nome)
     {
-        return quotaCash;
+        if (nome == null || nome.isBlank())
+            return 0;
+        return getAssetClass().stream().filter(a -> nome.equals(a.getNome())).mapToDouble(AssetClass::getPeso)
+                        .findFirst().orElse(0);
     }
 
-    public void setQuotaCash(double quotaCash)
+    /** Anno scelto nella Revisione, 0 se non ancora scelto. */
+    public int getAnnoRevisione()
     {
-        this.quotaCash = quotaCash;
+        return annoRevisione;
+    }
+
+    public void setAnnoRevisione(int annoRevisione)
+    {
+        this.annoRevisione = annoRevisione;
+    }
+
+    public Optional<Strumento> getStrumento(String uuid)
+    {
+        if (strumenti == null)
+            return Optional.empty();
+        return strumenti.stream().filter(s -> uuid.equals(s.getUuid())).findFirst();
+    }
+
+    /** Restituisce l'assegnazione del titolo, creandola se non esiste. */
+    public Strumento getOrCreateStrumento(String uuid)
+    {
+        var existing = getStrumento(uuid);
+        if (existing.isPresent())
+            return existing.get();
+        if (strumenti == null)
+            strumenti = new ArrayList<>();
+        var nuovo = new Strumento(uuid);
+        strumenti.add(nuovo);
+        return nuovo;
     }
 
     public int getAnnoPartenza()
@@ -245,12 +389,6 @@ public class PianoInvestimento
     public double getQuotaAzionaria()
     {
         return (125 - (eta + tassoBce * 5)) / 100;
-    }
-
-    /** Quota obbligazionaria: quello che resta dopo azioni e quote fisse. */
-    public double getQuotaBond()
-    {
-        return 1 - getQuotaAzionaria() - quotaCommodities - quotaCash;
     }
 
     public Optional<AnnoPiano> getAnno(int anno)

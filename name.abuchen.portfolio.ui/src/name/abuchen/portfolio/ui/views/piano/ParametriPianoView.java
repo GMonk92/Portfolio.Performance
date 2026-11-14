@@ -64,7 +64,7 @@ public class ParametriPianoView extends AbstractFinanceView
     @Override
     protected String getDefaultTitle()
     {
-        return "Parametri del piano";
+        return "Parametri del Piano";
     }
 
     @Override
@@ -82,34 +82,38 @@ public class ParametriPianoView extends AbstractFinanceView
 
         nota(body, "Scrivi i valori nei campi e premi Invio (o passa al campo successivo): il piano si salva nel file di Portfolio Performance.");
 
-        sezione(body, "1. Formula quota azionaria");
-        campo(body, "Età (anni)", () -> PianoFormat.intero(piano.getEta()),
-                        t -> piano.setEta(intero(t)), "");
-        campo(body, "Tasso BCE di riferimento (in punti, es. 3,75)", () -> PianoFormat.numero(piano.getTassoBce()),
+        sezione(body, "1. Formula Quota Azionaria");
+        campo(body, "Età (anni)", () -> PianoFormat.intero(piano.getEta()), t -> piano.setEta(intero(t)), "");
+        campo(body, "Tasso BCE (%)", () -> PianoFormat.numero(piano.getTassoBce()),
                         t -> piano.setTassoBce(numero(t)), "");
-        risultato(body, "Quota azionaria  Q = 125 − (Età + Tasso × 5)",
-                        () -> PianoFormat.percentuale(piano.getQuotaAzionaria()), true);
+        risultato(body, "Quota Azionaria (%)", () -> PianoFormat.percentuale(piano.getQuotaAzionaria()), true,
+                        "Q = 125 − (Età + Tasso BCE × 5), solo come riferimento");
 
-        sezione(body, "2. Asset allocation");
-        risultato(body, "Equity", () -> PianoFormat.percentuale(piano.getQuotaAzionaria()), false);
-        risultato(body, "Bond (quello che resta)", () -> PianoFormat.percentuale(piano.getQuotaBond()), false);
-        campo(body, "Commodities (quota fissa, %)", () -> PianoFormat.percentualeModifica(piano.getQuotaCommodities()),
-                        t -> piano.setQuotaCommodities(percentuale(t)), "");
-        campo(body, "Cash (quota fissa, %)", () -> PianoFormat.percentualeModifica(piano.getQuotaCash()),
-                        t -> piano.setQuotaCash(percentuale(t)), "");
+        sezione(body, "2. Asset Allocation");
+        for (int ii = 0; ii < PianoInvestimento.NUMERO_ASSET_CLASS; ii++)
+            assetClass(body, ii);
+        var totale = risultato(body, "Totale (%)", () -> PianoFormat.percentuale(piano.getTotaleAssetClass()), true,
+                        "");
+        totale.label().addListener(SWT.Paint, e -> {
+            var colore = Math.abs(piano.getTotaleAssetClass() - 1) > 0.00005 ? Colors.theme().redForeground()
+                            : Colors.theme().defaultForeground();
+            if (!colore.equals(totale.label().getForeground()))
+                totale.label().setForeground(colore);
+        });
         var avviso = new Label(body, SWT.NONE);
         avviso.setForeground(Colors.theme().redForeground());
         avviso.setBackground(body.getBackground());
         GridDataFactory.fillDefaults().span(3, 1).applyTo(avviso);
         risultati.add(new Risultato(avviso,
-                        () -> piano.getQuotaBond() < 0 ? "Controlla le quote fisse: la quota Bond è negativa." : ""));
+                        () -> Math.abs(piano.getTotaleAssetClass() - 1) > 0.00005
+                                        ? "La somma delle asset class deve fare 100%."
+                                        : ""));
 
-        sezione(body, "3. Dati di partenza e parametri del piano");
-        campo(body, "Anno di partenza (anno 0)", () -> PianoFormat.intero(piano.getAnnoPartenza()),
+        sezione(body, "3. Dati di Partenza e Parametri");
+        campo(body, "Anno di Partenza", () -> PianoFormat.intero(piano.getAnnoPartenza()),
                         t -> piano.setAnnoPartenza(intero(t)), "");
-        var valore = campo(body, "Valore attuale del portafoglio (€)",
-                        () -> PianoFormat.numero(piano.getValoreAttuale()), t -> piano.setValoreAttuale(numero(t)),
-                        null);
+        var valore = campo(body, "Valore Attuale (€)", () -> PianoFormat.numero(piano.getValoreAttuale()),
+                        t -> piano.setValoreAttuale(numero(t)), null);
         var usaPP = new Button(body, SWT.PUSH);
         usaPP.setText("Prendi il valore da Portfolio Performance");
         usaPP.setToolTipText("Usa il valore di mercato di oggi dei titoli presenti in Portfolio Performance");
@@ -119,48 +123,43 @@ public class ParametriPianoView extends AbstractFinanceView
             salvaEAggiorna();
         }));
 
-        campo(body, "PAC mensile in corso (€)", () -> PianoFormat.numero(piano.getPacMensile()),
+        campo(body, "PAC Mensile (€)", () -> PianoFormat.numero(piano.getPacMensile()),
                         t -> piano.setPacMensile(numero(t)), "");
-        campo(body, "Inflazione attesa per gli anni futuri (%)",
-                        () -> PianoFormat.percentualeModifica(piano.getInflazioneAttesa()),
+        campo(body, "Inflazione Attesa (%)", () -> PianoFormat.percentualeModifica(piano.getInflazioneAttesa()),
                         t -> piano.setInflazioneAttesa(percentuale(t)), "");
-        campo(body, "Rendimento reale atteso, al netto dell'inflazione (%)",
-                        () -> PianoFormat.percentualeModifica(piano.getRendimentoReale()),
+        campo(body, "Rendimento Reale Atteso (%)", () -> PianoFormat.percentualeModifica(piano.getRendimentoReale()),
                         t -> piano.setRendimentoReale(percentuale(t)), "");
-        campo(body, "Aumento reale annuo del PAC oltre l'inflazione, step-up (%)",
-                        () -> PianoFormat.percentualeModifica(piano.getStepUp()), t -> piano.setStepUp(percentuale(t)),
-                        "");
-        campo(body, "Obiettivo in euro reali, potere d'acquisto di oggi (€)",
-                        () -> PianoFormat.numero(piano.getObiettivo()), t -> piano.setObiettivo(numero(t)), "");
-        campo(body, "Tetto massimo integrazione annua (€)", () -> PianoFormat.numero(piano.getTettoIntegrazione()),
+        campo(body, "Step-up PAC (%)", () -> PianoFormat.percentualeModifica(piano.getStepUp()),
+                        t -> piano.setStepUp(percentuale(t)), "");
+        campo(body, "Obiettivo Reale (€)", () -> PianoFormat.numero(piano.getObiettivo()),
+                        t -> piano.setObiettivo(numero(t)), "");
+        campo(body, "Integrazione Annua (€)", () -> PianoFormat.numero(piano.getTettoIntegrazione()),
                         t -> piano.setTettoIntegrazione(numero(t)), "");
-        campo(body, "Soglia oltre cui ribilanciare internamente invece di integrare (€)",
-                        () -> PianoFormat.numero(piano.getSogliaRibilanciamento()),
+        campo(body, "Soglia Integrazione (€)", () -> PianoFormat.numero(piano.getSogliaRibilanciamento()),
                         t -> piano.setSogliaRibilanciamento(numero(t)), "");
-        campo(body, "Tolleranza scostamento dal peso target, ± (%)",
-                        () -> PianoFormat.percentualeModifica(piano.getTolleranza()),
+        campo(body, "Soglia di Scostamento (%)", () -> PianoFormat.percentualeModifica(piano.getTolleranza()),
                         t -> piano.setTolleranza(percentuale(t)), "");
 
-        sezione(body, "4. Dove ti porta il piano");
-        risultato(body, "Anno stimato di raggiungimento dell'obiettivo", () -> {
+        sezione(body, "4. Risultati del Piano");
+        risultato(body, "Anno Obiettivo", () -> {
             var calcolo = PianoCalcolo.calcola(piano);
             var anno = calcolo.getAnnoRaggiungimento();
             return anno != null ? String.valueOf(anno) : "oltre " + calcolo.getUltimoAnno();
-        }, true);
-        risultato(body, "Anni necessari", () -> {
+        }, true, "");
+        risultato(body, "Totale Anni", () -> {
             var anno = PianoCalcolo.calcola(piano).getAnnoRaggiungimento();
             return anno != null ? String.valueOf(anno - piano.getAnnoPartenza()) : "-";
-        }, false);
-        campo(body, "Anno entro cui vorresti arrivarci", () -> PianoFormat.intero(piano.getAnnoObiettivo()),
+        }, false, "");
+        campo(body, "Anno Desiderato", () -> PianoFormat.intero(piano.getAnnoObiettivo()),
                         t -> piano.setAnnoObiettivo(intero(t)), "");
-        risultato(body, "PAC mensile necessario da subito per arrivarci", () -> {
+        risultato(body, "PAC Corretto (€)", () -> {
             var pac = PianoCalcolo.calcola(piano).getPacNecessario();
             return pac != null ? PianoFormat.euro(pac) : "-";
-        }, true);
-        var differenza = risultato(body, "Differenza rispetto al PAC in corso (al mese)", () -> {
+        }, true, "PAC mensile da subito per arrivare all'obiettivo nell'anno desiderato");
+        var differenza = risultato(body, "PAC Delta (€)", () -> {
             var pac = PianoCalcolo.calcola(piano).getPacNecessario();
             return pac != null ? PianoFormat.euro(pac - piano.getPacMensile()) : "-";
-        }, false);
+        }, false, "differenza al mese rispetto al PAC Mensile");
         differenza.label().addListener(SWT.Paint, e -> {
             var pac = PianoCalcolo.calcola(piano).getPacNecessario();
             var rosso = pac != null && pac - piano.getPacMensile() > 0.5;
@@ -261,7 +260,8 @@ public class ParametriPianoView extends AbstractFinanceView
         return text;
     }
 
-    private Risultato risultato(Composite parent, String etichetta, Supplier<String> getter, boolean grassetto)
+    private Risultato risultato(Composite parent, String etichetta, Supplier<String> getter, boolean grassetto,
+                    String nota)
     {
         var label = new Label(parent, SWT.NONE);
         label.setText(etichetta);
@@ -273,12 +273,70 @@ public class ParametriPianoView extends AbstractFinanceView
             value.setFont(JFaceResources.getFontRegistry().getBold(JFaceResources.DEFAULT_FONT));
         GridDataFactory.fillDefaults().hint(120, SWT.DEFAULT).applyTo(value);
 
-        var filler = new Label(parent, SWT.NONE);
-        filler.setBackground(parent.getBackground());
+        var n = new Label(parent, SWT.NONE);
+        n.setText(nota);
+        n.setForeground(Colors.theme().grayForeground());
+        n.setBackground(parent.getBackground());
 
         var risultato = new Risultato(value, getter);
         risultati.add(risultato);
         return risultato;
+    }
+
+    /** Riga di una asset class: nome e peso entrambi modificabili. */
+    private void assetClass(Composite parent, int index)
+    {
+        var nome = new Text(parent, SWT.BORDER);
+        nome.setForeground(Colors.BLUE);
+        nome.setMessage("asset class libera");
+        GridDataFactory.fillDefaults().hint(200, SWT.DEFAULT).align(SWT.BEGINNING, SWT.CENTER).applyTo(nome);
+        Supplier<String> getNome = () -> {
+            var n = piano.getAssetClass().get(index).getNome();
+            return n == null ? "" : n;
+        };
+        nome.setText(getNome.get());
+        Runnable applicaNome = () -> {
+            var testo = nome.getText().trim();
+            if (!testo.equals(getNome.get()))
+            {
+                piano.getAssetClass().get(index).setNome(testo);
+                salvaEAggiorna();
+            }
+        };
+        nome.addListener(SWT.DefaultSelection, e -> applicaNome.run());
+        nome.addListener(SWT.FocusOut, e -> applicaNome.run());
+        campi.add(new Campo(nome, getNome));
+
+        var peso = new Text(parent, SWT.BORDER | SWT.RIGHT);
+        peso.setForeground(Colors.BLUE);
+        GridDataFactory.fillDefaults().hint(120, SWT.DEFAULT).applyTo(peso);
+        Supplier<String> getPeso = () -> PianoFormat.percentualeModifica(piano.getAssetClass().get(index).getPeso());
+        peso.setText(getPeso.get());
+        Runnable applicaPeso = () -> {
+            var prima = getPeso.get();
+            try
+            {
+                var valore = PianoFormat.leggiPercentuale(peso.getText());
+                piano.getAssetClass().get(index).setPeso(valore == null ? 0 : valore);
+            }
+            catch (ParseException e)
+            {
+                // valore non valido: si torna al valore precedente
+            }
+            var dopo = getPeso.get();
+            if (!dopo.equals(peso.getText()))
+                peso.setText(dopo);
+            if (!dopo.equals(prima))
+                salvaEAggiorna();
+        };
+        peso.addListener(SWT.DefaultSelection, e -> applicaPeso.run());
+        peso.addListener(SWT.FocusOut, e -> applicaPeso.run());
+        campi.add(new Campo(peso, getPeso));
+
+        var n = new Label(parent, SWT.NONE);
+        n.setText("%");
+        n.setForeground(Colors.theme().grayForeground());
+        n.setBackground(parent.getBackground());
     }
 
     private void salvaEAggiorna()

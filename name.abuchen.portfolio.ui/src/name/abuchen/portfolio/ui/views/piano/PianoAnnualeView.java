@@ -41,7 +41,7 @@ import name.abuchen.portfolio.ui.editor.AbstractFinanceView;
 import name.abuchen.portfolio.ui.util.Colors;
 
 /**
- * Sezione "Piano anno per anno": corrisponde al foglio Piano del file Excel.
+ * Sezione "Prospetto": corrisponde al foglio Piano del file Excel.
  * Si compilano l'inflazione ISTAT e il valore del portafoglio al 31/12; gli
  * altri valori dell'anno compaiono solo dopo aver inserito l'inflazione.
  */
@@ -63,7 +63,7 @@ public class PianoAnnualeView extends AbstractFinanceView
     @Override
     protected String getDefaultTitle()
     {
-        return "Piano anno per anno";
+        return "Prospetto";
     }
 
     @Override
