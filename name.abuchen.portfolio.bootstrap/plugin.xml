@@ -7,10 +7,10 @@
          point="org.eclipse.core.runtime.products">
       <product
             application="org.eclipse.e4.ui.workbench.swt.E4Application"
-            name="Portfolio Performance">
+            name="Personal Portfolio Performance">
          <property
                name="appName"
-               value="Portfolio Performance">
+               value="Personal Portfolio Performance">
          </property>
          <property
                name="cssTheme"

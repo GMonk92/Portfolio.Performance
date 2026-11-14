@@ -40,11 +40,13 @@ jobs:
         with:
           maven-version: 3.9.16
 
+      # The openapi-compat check reads the rest-api-v1.0.0 tag, which forks
+      # do not have: run it only in the main repository.
       - name: Build
         run: |
           mvn verify \
             --batch-mode \
-            -Popenapi-lint,openapi-compat \
+            -Popenapi-lint${{ github.repository == 'portfolio-performance/portfolio' && ',openapi-compat' || '' }} \
             --file portfolio-app/pom.xml
 
   # Runs only on the master branch of the main repo; includes SonarQube analysis.

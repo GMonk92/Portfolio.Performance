@@ -1,0 +1,71 @@
+# Crea l'installer Windows della versione personale di Portfolio Performance
+# con le sezioni del "Piano di investimento".
+#
+# Parte da solo a ogni modifica dei branch master e claude/**, oppure a mano
+# dalla scheda "Actions" di GitHub (pulsante "Run workflow").
+# Al termine l'installer si scarica dalla pagina dell'esecuzione, nella sezione
+# "Artifacts" (file PortfolioPerformance-Piano-setup).
+
+name: Installer Windows (Piano)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - 'claude/**'
+
+jobs:
+  installer:
+    name: Build installer Windows
+    if: github.repository != 'portfolio-performance/portfolio'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache Maven artifacts
+        uses: actions/cache@v6
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-mvn-installer-${{ hashFiles('**/pom.xml', '**/*.target') }}
+          restore-keys: |
+            ${{ runner.os }}-mvn-installer-
+            ${{ runner.os }}-mvn-
+
+      - name: Set up Zulu JDK 21
+        uses: actions/setup-java@v6
+        with:
+          java-version: 21
+          distribution: zulu
+
+      - name: Set up Maven 3.9.16
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.16
+
+      - name: Install NSIS
+        run: sudo apt-get update -q && sudo apt-get install -y -q nsis
+
+      - name: Build
+        run: |
+          mvn verify \
+            --batch-mode \
+            -DskipTests \
+            -Dcheckstyle.skip=true \
+            -Djacoco.skip=true \
+            -Ppackage-distro \
+            --file portfolio-app/pom.xml
+
+      - name: Build installer
+        working-directory: portfolio-product/installer
+        run: |
+          VERSION=$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' ../pom.xml | head -1)
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          makensis -DSOFTWARE_VERSION="$VERSION" installer-piano.nsi
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: PersonalPortfolioPerformance-setup
+          path: portfolio-product/target/products/PersonalPortfolioPerformance-*-setup.exe
+          if-no-files-found: error
